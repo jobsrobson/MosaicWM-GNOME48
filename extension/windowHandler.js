@@ -918,6 +918,26 @@ export const WindowHandler = GObject.registerClass({
     // already lives, gets its own workspace. {handled:true, result} when isolated.
     async _ensureFitsSacred(window, workspace, monitor) {
         const isIncomingSacred = this.windowingManager.isMaximizedOrFullscreen(window);
+
+        // When sacred isolation is disabled, maximized/fullscreen windows remain
+        // in the current workspace but stay outside the Mosaic layout.
+        //
+        // Mark the sacred arrival as handled so it does not fall through to the
+        // normal fit/smart-resize/overflow pipeline. Normal windows, however,
+        // are allowed to coexist with a sacred window in the same workspace.
+        if (!this.windowingManager.shouldIsolateSacredWindows()) {
+            if (isIncomingSacred) {
+                Logger.log(
+                    'Sacred isolation disabled - keeping maximized/fullscreen window in current workspace'
+                );
+                return { handled: true, result: workspace };
+            }
+
+            return { handled: false };
+        }
+
+
+
         const hasExistingSacred = this.windowingManager.hasSacredWindow(workspace, monitor, window.get_id());
         const workspaceWindows = this.windowingManager.getMonitorWorkspaceWindows(workspace, monitor)
             .filter(w => !WindowState.get(w, 'pendingInQueue'));

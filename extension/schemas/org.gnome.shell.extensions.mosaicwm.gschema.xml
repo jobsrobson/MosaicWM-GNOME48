@@ -16,5 +16,11 @@
       <description>Show the Mosaic WM indicator in the GNOME top panel.</description>
     </key>
 
+    <key name="isolate-sacred-windows" type="b">
+      <default>true</default>
+      <summary>Isolate maximized and fullscreen windows</summary>
+      <description>Move maximized and fullscreen windows to a dedicated workspace.</description>
+    </key>
+
   </schema>
 </schemalist>

@@ -53,6 +53,20 @@ export default class MosaicPreferences extends ExtensionPreferences {
             0
         );
 
+        const isolateSacredRow = new Adw.SwitchRow({
+            title: 'Isolate maximized and fullscreen windows',
+            subtitle: 'Move maximized and fullscreen windows to a dedicated workspace',
+        });
+
+        settings.bind(
+            'isolate-sacred-windows',
+            isolateSacredRow,
+            'active',
+            0
+        );
+
+        group.add(isolateSacredRow);
+
         group.add(bottomRow);
         group.add(indicatorRow);
         page.add(group);

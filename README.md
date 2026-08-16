@@ -20,6 +20,13 @@
 >   - Default: **80 px**.
 >   - The reserved area is consistently applied to Mosaic tiling, dragging, resizing, swapping, reordering, edge tiling and Overview calculations.
 >
+> - **Optional maximized/fullscreen window isolation**
+>   - Adds a preference to disable MosaicWM's default dedicated-workspace behavior for maximized and fullscreen windows.
+>   - When disabled, maximized and fullscreen windows remain on their current workspace.
+>   - Sacred windows remain excluded from the Mosaic layout while maximized or fullscreen.
+>   - Restoring the window returns it to normal Mosaic management.
+>   - Applies to both maximized windows and application fullscreen, including fullscreen video.
+>
 > - **Optional panel indicator**
 >   - Adds a preference to hide the Mosaic status indicator from the GNOME top panel.
 >   - The Mosaic toggle and workspace controls remain available in Quick Settings.

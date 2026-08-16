@@ -2102,7 +2102,13 @@ export const TilingManager = GObject.registerClass({
     // A single window never overflows; a maximized/fullscreen sibling always forces it.
     _determineOverflow(tile_info, workspace_windows) {
         if (workspace_windows.length <= 1) return false;
-        if (workspace_windows.some(w => this._windowingManager.isMaximizedOrFullscreen(w))) return true;
+        if (
+            this._windowingManager.shouldIsolateSacredWindows() &&
+            workspace_windows.some(
+                w => this._windowingManager.isMaximizedOrFullscreen(w)
+            )
+        )
+            return true;
         return tile_info.overflow;
     }
 
@@ -2589,7 +2595,10 @@ export const TilingManager = GObject.registerClass({
             Logger.log('canFitWindow: No working info - cannot fit');
             return false;
         }
-        if (this._hasMaximizedWindow(working_info.meta_windows)) {
+        if (
+            this._windowingManager.shouldIsolateSacredWindows() &&
+            this._hasMaximizedWindow(working_info.meta_windows)
+        ) {
             Logger.log('canFitWindow: Workspace has maximized window - cannot fit');
             return false;
         }
@@ -2618,6 +2627,8 @@ export const TilingManager = GObject.registerClass({
     // Symmetric isolation: a sacred (maximized/fullscreen) incoming window only fits an empty
     // workspace; a normal one only fits a workspace with no sacred window. 'continue' otherwise.
     _sacredIsolationVerdict(window, workspace, monitor) {
+        if (!this._windowingManager.shouldIsolateSacredWindows())
+            return 'continue';
         const otherWindows = this._windowingManager.getMonitorWorkspaceWindows(workspace, monitor)
             .filter(w => !WindowState.get(w, 'pendingInQueue') && w.get_id() !== window.get_id());
 

@@ -250,6 +250,12 @@ export const ResizeHandler = GObject.registerClass({
     }
 
     tryEnterSacred(window) {
+        if (!this.windowingManager.shouldIsolateSacredWindows()) {
+            Logger.log(
+                '[SACRED-ENTER] Sacred isolation disabled - keeping window in current workspace'
+            );
+            return;
+        }
         if (this._detectBornMaximized(window)) return;
 
         // Born-maximized guard (from onWindowCreated, for subsequent maximize events)

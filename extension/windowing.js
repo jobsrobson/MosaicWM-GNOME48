@@ -14,6 +14,8 @@ import { TileZone, ZONE_SIDE, SIDE_ZONES } from './constants.js';
 import * as WindowState from './windowState.js';
 import { isWindowAlive } from './liveness.js';
 
+import { getIsolateSacredWindows } from './settings.js';
+
 const BLACKLISTED_WM_CLASSES = [
     'org.gnome.Screenshot',
     'Gnome-screenshot',
@@ -412,6 +414,14 @@ export const WindowingManager = GObject.registerClass({
 
     isMaximizedOrFullscreen(window) {
         return compatIsMaximizedOrFullscreen(window);
+    }
+
+    shouldIsolateSacredWindows() {
+        return getIsolateSacredWindows();
+    }
+
+    shouldIsolateSacredWindows() {
+        return getIsolateSacredWindows();
     }
 
     hasSacredWindow(workspace, monitor, excludeWindowId = null) {

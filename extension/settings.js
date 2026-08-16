@@ -20,3 +20,7 @@ export function getBottomReservedSpace() {
 export function getShowPanelIndicator() {
     return _settings?.get_boolean('show-panel-indicator') ?? true;
 }
+
+export function getIsolateSacredWindows() {
+    return _settings?.get_boolean('isolate-sacred-windows') ?? true;
+}
