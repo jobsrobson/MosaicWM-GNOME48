@@ -3,6 +3,7 @@
 // Edge tiling (snap to screen edges) functionality
 
 import * as Logger from './logger.js';
+import { isMaximized } from './compat.js';
 import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import * as constants from './constants.js';
@@ -13,6 +14,7 @@ import { getMiniatureSize } from './miniature.js';
 import { monotonicNow } from './timing.js';
 
 import GObject from 'gi://GObject';
+import { getMosaicWorkArea } from './workArea.js';
 
 export const EdgeTilingManager = GObject.registerClass({
     GTypeName: 'MosaicEdgeTilingManager',
@@ -333,7 +335,7 @@ export const EdgeTilingManager = GObject.registerClass({
             return null;
         }
 
-        const workArea = workspace.get_work_area_for_monitor(monitor);
+        const workArea = getMosaicWorkArea(workspace, monitor);
         const edgeTiledWindows = this.getEdgeTiledWindows(workspace, monitor);
 
         if (edgeTiledWindows.length === 0) return workArea;
@@ -441,7 +443,7 @@ export const EdgeTilingManager = GObject.registerClass({
                     const fullZone = this._getFullZoneFromQuarter(state.zone);
                     const workspace = window.get_workspace();
                     const monitor = window.get_monitor();
-                    const workArea = workspace.get_work_area_for_monitor(monitor);
+                    const workArea = getMosaicWorkArea(workspace, monitor);
                     const fullRect = this.getZoneRect(fullZone, workArea, adjacentWindow);
 
                     if (fullRect) {
@@ -485,7 +487,7 @@ export const EdgeTilingManager = GObject.registerClass({
     resolveArrowIntent(window, direction) {
         const zone = this.getWindowState(window)?.zone ?? TileZone.NONE;
 
-        if (window.is_maximized()) {
+        if (isMaximized(window)) {
             if (direction === 'up') return { kind: 'none' };
             // Only unmaximize; the sacred path repositions it once the maximized flag clears.
             if (direction === 'down') return { kind: 'unmaximize' };
@@ -553,7 +555,7 @@ export const EdgeTilingManager = GObject.registerClass({
         const edgeTiledWindows = this.getEdgeTiledWindows(workspace, monitor);
         if (edgeTiledWindows.length === 0) return;
 
-        const workArea = workspace.get_work_area_for_monitor(monitor);
+        const workArea = getMosaicWorkArea(workspace, monitor);
 
         const leftQuarters = edgeTiledWindows.filter(w =>
             w.zone === TileZone.TOP_LEFT || w.zone === TileZone.BOTTOM_LEFT
@@ -667,7 +669,7 @@ export const EdgeTilingManager = GObject.registerClass({
 
         // allows_resize() folds in the current maximized state, so it vetoes a window
         // applyTile is about to unmaximize. resizeable is the same hint minus that state.
-        if (aboutToUnmaximize && window.is_maximized()) {
+        if (aboutToUnmaximize && isMaximized(window)) {
             if (!window.resizeable) {
                 Logger.log('Window does not allow resize');
                 return false;
@@ -920,7 +922,7 @@ export const EdgeTilingManager = GObject.registerClass({
             this._expandAdjacentQuarterToFull(window, savedZone);
         }
 
-        if (window.is_maximized()) {
+        if (isMaximized(window)) {
             window.unmaximize();
         }
 
@@ -1001,7 +1003,7 @@ export const EdgeTilingManager = GObject.registerClass({
         // The side comes from the zone we were handed, since on the untile path our own
         // state is already gone and reading it back would say RIGHT_FULL for a left quarter.
         const fullZone = this._getFullZoneFromQuarter(savedZone);
-        const workArea = workspace.get_work_area_for_monitor(monitor);
+        const workArea = getMosaicWorkArea(workspace, monitor);
         const fullRect = this.getZoneRect(fullZone, workArea, adjacentWindow);
         if (!fullRect) return;
 
@@ -1057,7 +1059,7 @@ export const EdgeTilingManager = GObject.registerClass({
         if (!zone) return false;
 
         // Still maximized means no free half, and its frame would size the pair down to nothing.
-        if (tiledWindow.is_maximized()) return false;
+        if (isMaximized(tiledWindow)) return false;
 
         const workspace = tiledWindow.get_workspace();
         if (!workspace) return false;
@@ -1067,7 +1069,7 @@ export const EdgeTilingManager = GObject.registerClass({
         if (mosaicWindows.length !== 1) return false;
 
         return this._tryPairIntoOppositeHalf(mosaicWindows[0], tiledWindow, zone,
-            workspace.get_work_area_for_monitor(monitor));
+            getMosaicWorkArea(workspace, monitor));
     }
 
     // Counterpart of the expansion on exile: the quarter this window was stacked against took the
@@ -1077,7 +1079,7 @@ export const EdgeTilingManager = GObject.registerClass({
         if (!zone || !this._isQuarterZone(zone)) return false;
 
         // Still sacred means the safety timeout forced the return before the unmaximize landed.
-        if (returningWindow.is_maximized() || returningWindow.is_fullscreen()) return false;
+        if (isMaximized(returningWindow) || returningWindow.is_fullscreen()) return false;
 
         const workspace = returningWindow.get_workspace();
         if (!workspace) return false;
@@ -1087,7 +1089,7 @@ export const EdgeTilingManager = GObject.registerClass({
         if (!this._findWindowInZone(fullZone, workspace, monitor)) return false;
 
         Logger.log(`Re-splitting zone ${fullZone} to give ${returningWindow.get_id()} its quarter back`);
-        return this.applyTile(returningWindow, zone, workspace.get_work_area_for_monitor(monitor), true);
+        return this.applyTile(returningWindow, zone, getMosaicWorkArea(workspace, monitor), true);
     }
 
     _tryPairIntoOppositeHalf(mosaicWindow, tiledWindow, zone, workArea) {
@@ -1118,7 +1120,7 @@ export const EdgeTilingManager = GObject.registerClass({
 
         const workspace = tiledWindow.get_workspace();
         const monitor = tiledWindow.get_monitor();
-        const workArea = workspace.get_work_area_for_monitor(monitor);
+        const workArea = getMosaicWorkArea(workspace, monitor);
 
         // Check if BOTH sides are now edge-tiled (including the window just tiled)
         const occupiedSides = new Set(
@@ -1208,7 +1210,7 @@ export const EdgeTilingManager = GObject.registerClass({
     _handleHorizontalResize(window, zone) {
         const workspace = window.get_workspace();
         const monitor = window.get_monitor();
-        const workArea = workspace.get_work_area_for_monitor(monitor);
+        const workArea = getMosaicWorkArea(workspace, monitor);
 
         const adjacentWindow = this._getAdjacentWindow(window, workspace, monitor, zone);
 
@@ -1224,7 +1226,7 @@ export const EdgeTilingManager = GObject.registerClass({
     _handleVerticalResize(window, zone) {
         const workspace = window.get_workspace();
         const monitor = window.get_monitor();
-        const workArea = workspace.get_work_area_for_monitor(monitor);
+        const workArea = getMosaicWorkArea(workspace, monitor);
 
         const adjacentZone = this._getAdjacentQuarterZone(zone);
         if (!adjacentZone) return;
@@ -1353,7 +1355,7 @@ export const EdgeTilingManager = GObject.registerClass({
     fixTiledPairSizes(resizedWindow, zone) {
         const workspace = resizedWindow.get_workspace();
         const monitor = resizedWindow.get_monitor();
-        const workArea = workspace.get_work_area_for_monitor(monitor);
+        const workArea = getMosaicWorkArea(workspace, monitor);
         const adjacentWindow = this._getAdjacentWindow(resizedWindow, workspace, monitor, zone);
 
         if (!adjacentWindow) return;
@@ -1426,7 +1428,7 @@ export const EdgeTilingManager = GObject.registerClass({
     fixMosaicAfterEdgeResize(edgeTiledWindow, zone) {
         const workspace = edgeTiledWindow.get_workspace();
         const monitor = edgeTiledWindow.get_monitor();
-        const workArea = workspace.get_work_area_for_monitor(monitor);
+        const workArea = getMosaicWorkArea(workspace, monitor);
         const edgeFrame = edgeTiledWindow.get_frame_rect();
 
         const mosaicWindows = this.getNonEdgeTiledWindows(workspace, monitor);
@@ -1509,7 +1511,7 @@ export const EdgeTilingManager = GObject.registerClass({
     fixQuarterPairSizes(resizedWindow, zone) {
         const workspace = resizedWindow.get_workspace();
         const monitor = resizedWindow.get_monitor();
-        const workArea = workspace.get_work_area_for_monitor(monitor);
+        const workArea = getMosaicWorkArea(workspace, monitor);
         const adjacentZone = this._getAdjacentQuarterZone(zone);
         if (!adjacentZone) return;
 

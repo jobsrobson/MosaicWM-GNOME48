@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
 
 import * as Logger from './logger.js';
+import { isMaximized } from './compat.js';
 import { Extension, InjectionManager } from 'resource:///org/gnome/shell/extensions/extension.js';
 import Clutter from 'gi://Clutter';
 import Gio from 'gi://Gio';
@@ -16,6 +17,7 @@ import * as Screenshot from 'resource:///org/gnome/shell/ui/screenshot.js';
 import * as WindowPreviewModule from 'resource:///org/gnome/shell/ui/windowPreview.js';
 
 import { WindowingManager } from './windowing.js';
+import { getMosaicWorkArea } from './workArea.js';
 import * as constants from './constants.js';
 
 import { SettingsOverrider } from './settingsOverrider.js';
@@ -37,6 +39,7 @@ import { MiniatureManager } from './miniature.js';
 import * as WindowState from './windowState.js';
 import { IS_MINIATURE, MINIATURE_SCALE, MINIATURE_EXT_LEFT, MINIATURE_EXT_TOP, MINIATURE_TARGET_POS, MINIATURE_OVERLAY } from './windowState.js';
 import { MosaicIndicator } from './quickSettings.js';
+import { initSettings, clearSettings } from './settings.js';
 
 export default class WindowMosaicExtension extends Extension {
     constructor(metadata) {
@@ -225,7 +228,8 @@ export default class WindowMosaicExtension extends Extension {
 
     enable() {
         Logger.info('Starting Mosaic layout manager.');
-
+        
+        this._settings = initSettings(this);
         this._disabledWorkspaceStates = new WeakMap();
         this._mosaicDisabledByDefault = false;
         this._timeoutRegistry = new TimeoutRegistry();
@@ -924,7 +928,7 @@ export default class WindowMosaicExtension extends Extension {
     _applyArrowIntent(window, workspace, intent) {
         switch (intent.kind) {
             case 'tile': {
-                const workArea = workspace.get_work_area_for_monitor(window.get_monitor());
+                const workArea = getMosaicWorkArea(workspace, window.get_monitor());
                 this.edgeTilingManager.applyTile(window, intent.zone, workArea);
                 break;
             }
@@ -947,7 +951,7 @@ export default class WindowMosaicExtension extends Extension {
     // The side arrows come through here too, so both branches have to name their direction.
     _applyStockVertical(window, direction) {
         if (direction === 'up' && window.can_maximize()) window.maximize();
-        else if (direction === 'down' && window.is_maximized()) window.unmaximize();
+        else if (direction === 'down' && isMaximized(window)) window.unmaximize();
     }
 
     _restoreWindow(window) {

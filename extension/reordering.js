@@ -6,6 +6,7 @@ import * as Logger from './logger.js';
 import { TileZone } from './constants.js';
 
 import GObject from 'gi://GObject';
+import { getMosaicWorkArea } from './workArea.js';
 
 export const ReorderingManager = GObject.registerClass({
     GTypeName: 'MosaicReorderingManager',
@@ -92,7 +93,7 @@ export const ReorderingManager = GObject.registerClass({
     _isOverEdgeZone(cursor, workspace, monitor) {
         if (!this._edgeTilingManager) return false;
 
-        const workArea = workspace.get_work_area_for_monitor(monitor);
+        const workArea = getMosaicWorkArea(workspace, monitor);
         return this._edgeTilingManager.detectZone(cursor.x, cursor.y, workArea, workspace) !== TileZone.NONE;
     }
 
@@ -201,7 +202,7 @@ export const ReorderingManager = GObject.registerClass({
 
         // Pre-compute all valid mosaic layouts for this drag session
         const draggedId = meta_window.get_id();
-        const workArea = remainingSpace || workspace.get_work_area_for_monitor(monitor);
+        const workArea = remainingSpace || getMosaicWorkArea(workspace, monitor);
         this._dragLayouts = this._tilingManager.computeDragLayouts(descriptorsCopy, workArea, draggedId);
         this._chosenLayout = null;
 

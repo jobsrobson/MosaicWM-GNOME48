@@ -1,3 +1,58 @@
+> [!NOTE]
+> ## GNOME 48 compatibility fork
+>
+> This repository is a fork of [CleoMenezesJr/MosaicWM](https://github.com/CleoMenezesJr/MosaicWM), based on upstream commit [`16f14d3`](https://github.com/CleoMenezesJr/MosaicWM/commit/16f14d3f5a1eac6ae87fc935d681afb91d6c21e0).
+>
+> The purpose of this fork is to bring the current MosaicWM experience, including miniatures, to **GNOME Shell 48 / Mutter 48**, while retaining compatibility with GNOME Shell 50.
+>
+> ### Changes in this fork
+>
+> - **GNOME Shell 48 support**
+>   - Adds GNOME Shell 48 to the supported Shell versions.
+>   - Introduces a compatibility layer for Mutter APIs unavailable in Mutter 48.
+>   - Falls back to `maximized_horizontally` and `maximized_vertically` when `Meta.Window.is_maximized()` is unavailable.
+>   - Preserves the native `is_maximized()` implementation on newer Mutter versions when available.
+>
+> - **Configurable bottom reserved space**
+>   - Adds an optional reserved area below Mosaic-managed windows.
+>   - Useful with docks that overlay windows instead of reserving Mutter work area, such as Dash to Dock with certain configurations.
+>   - Configurable from **0 to 300 px**.
+>   - Default: **80 px**.
+>   - The reserved area is consistently applied to Mosaic tiling, dragging, resizing, swapping, reordering, edge tiling and Overview calculations.
+>
+> - **Optional panel indicator**
+>   - Adds a preference to hide the Mosaic status indicator from the GNOME top panel.
+>   - The Mosaic toggle and workspace controls remain available in Quick Settings.
+>   - Changes are applied immediately without restarting GNOME Shell.
+>
+> - **Native preferences window**
+>   - Adds a GNOME/Libadwaita preferences window.
+>   - Currently provides:
+>     - Bottom reserved space
+>     - Show panel indicator
+>
+> ### Tested environment
+>
+> This fork has been tested on:
+>
+> - GNOME Shell 48
+> - Mutter 48
+> - X11
+>
+> Core MosaicWM functionality, including automatic tiling, smart resizing, miniatures, Overview integration, workspace switching, edge tiling and session restart/login, has been tested successfully.
+>
+> ### Upstream
+>
+> MosaicWM is originally developed by the amazing **Cleo Menezes Jr.**
+>
+> All original project credit belongs to the upstream author and contributors. This fork contains compatibility and configuration changes on top of the original project.
+>
+> For the original project, documentation and latest upstream development, please see [CleoMenezesJr/MosaicWM](https://github.com/CleoMenezesJr/MosaicWM).
+>
+> This fork was created for personal use and is provided as it is, without any kind of support. I might update it as new developments become available in the upstream project.
+
+
+
 # Mosaic WM
 
 > 📣 **Development journal on Mastodon:** [floss.social/@CleoMenezesJr](https://floss.social/@CleoMenezesJr/115606214788777474)

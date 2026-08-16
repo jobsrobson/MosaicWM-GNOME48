@@ -3,6 +3,7 @@
 // Window management utilities and workspace operations
 
 import * as Logger from './logger.js';
+import { isMaximizedOrFullscreen as compatIsMaximizedOrFullscreen } from './compat.js';
 import GLib from 'gi://GLib';
 import Meta from 'gi://Meta';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
@@ -19,6 +20,7 @@ const BLACKLISTED_WM_CLASSES = [
 ];
 
 import GObject from 'gi://GObject';
+import { getMosaicWorkArea } from './workArea.js';
 
 export const WindowingManager = GObject.registerClass({
     GTypeName: 'MosaicWindowingManager',
@@ -116,7 +118,7 @@ export const WindowingManager = GObject.registerClass({
 
         const workspace = window.get_workspace();
         const monitor = window.get_monitor();
-        const workArea = workspace.get_work_area_for_monitor(monitor);
+        const workArea = getMosaicWorkArea(workspace, monitor);
 
         const tileState = this._edgeTilingManager.getWindowState(edgeTiledWindow);
 
@@ -285,7 +287,7 @@ export const WindowingManager = GObject.registerClass({
                                         return;
                                     }
                                     const finalFrame = window.get_frame_rect();
-                                    const workArea = target_workspace.get_work_area_for_monitor(monitor);
+                                    const workArea = getMosaicWorkArea(target_workspace, monitor);
                                     const expectedX = Math.floor((workArea.width - finalFrame.width) / 2) + workArea.x;
                                     const expectedY = Math.floor((workArea.height - finalFrame.height) / 2) + workArea.y;
                                     const positionError = Math.abs(finalFrame.x - expectedX) + Math.abs(finalFrame.y - expectedY);
@@ -409,7 +411,7 @@ export const WindowingManager = GObject.registerClass({
     }
 
     isMaximizedOrFullscreen(window) {
-        return window.is_maximized() || window.is_fullscreen();
+        return compatIsMaximizedOrFullscreen(window);
     }
 
     hasSacredWindow(workspace, monitor, excludeWindowId = null) {

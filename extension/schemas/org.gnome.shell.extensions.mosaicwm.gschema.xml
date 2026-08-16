@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+  <schema id="org.gnome.shell.extensions.mosaicwm"
+          path="/org/gnome/shell/extensions/mosaicwm/">
+
+    <key name="bottom-reserved-space" type="i">
+      <default>80</default>
+      <range min="0" max="300"/>
+      <summary>Bottom reserved space</summary>
+      <description>Space in pixels kept free below Mosaic-managed windows.</description>
+    </key>
+
+    <key name="show-panel-indicator" type="b">
+      <default>true</default>
+      <summary>Show panel indicator</summary>
+      <description>Show the Mosaic WM indicator in the GNOME top panel.</description>
+    </key>
+
+  </schema>
+</schemalist>

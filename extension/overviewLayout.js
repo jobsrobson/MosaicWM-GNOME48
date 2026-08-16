@@ -5,6 +5,7 @@
 import * as Workspace from 'resource:///org/gnome/shell/ui/workspace.js';
 import { ComputedLayouts } from './mosaicModel.js';
 import { WINDOW_SPACING } from './constants.js';
+import { getMosaicWorkArea } from './workArea.js';
 
 // Scales down the layout instead of reorganizing windows (preserves spatial memory)
 // Overview clones expose the window directly or behind .source depending on where the
@@ -45,7 +46,7 @@ export class MosaicLayoutStrategy extends Workspace.LayoutStrategy {
 
         const monitor = this.monitor || this._monitor;
         const monitorIndex = monitor ? monitor.index : global.display.get_primary_monitor();
-        const workArea = workspace.get_work_area_for_monitor(monitorIndex);
+        const workArea = getMosaicWorkArea(workspace, monitorIndex);
 
         if (!workArea || workArea.width <= 0 || workArea.height <= 0) {
             return [];

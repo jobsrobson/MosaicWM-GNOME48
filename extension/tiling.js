@@ -8,6 +8,7 @@ import GObject from 'gi://GObject';
 import Meta from 'gi://Meta';
 
 import * as Logger from './logger.js';
+import { isMaximized } from './compat.js';
 import * as constants from './constants.js';
 import { TileZone, ZONE_SIDE } from './constants.js';
 import * as WindowState from './windowState.js';
@@ -25,6 +26,7 @@ import {
 import { getMiniatureSize, applyMiniatureActorState, animateMiniatureToTarget } from './miniature.js';
 import { isWindowAlive } from './liveness.js';
 import { getSlowDownFactor, monotonicNow } from './timing.js';
+import { getMosaicWorkArea } from './workArea.js';
 
 const POSITION_STABILITY_WEIGHT = 40;
 // These two only ever compete with each other. Nothing outscores the layout that reproduces
@@ -621,7 +623,7 @@ export const TilingManager = GObject.registerClass({
     // lives in the space the edge tiles leave over, so measure against that.
     _mosaicWindowsAndArea(workspace, monitor) {
         let meta_windows = this._windowingManager.getMonitorWorkspaceWindows(workspace, monitor);
-        let workArea = workspace.get_work_area_for_monitor(monitor);
+        let workArea = getMosaicWorkArea(workspace, monitor);
         if (this._edgeTilingManager) {
             const edgeTiled = this._edgeTilingManager.getEdgeTiledWindows(workspace, monitor);
             if (edgeTiled.length > 0) {
@@ -2735,7 +2737,7 @@ export const TilingManager = GObject.registerClass({
         // pre-constraint and would wrongly report overflow.
         const preferred = WindowState.get(window, 'preferredSize');
         const isConstrained = WindowState.get(window, 'isConstrainedByMosaic');
-        if (preferred && !window.is_fullscreen() && !window.is_maximized() && !isConstrained) {
+        if (preferred && !window.is_fullscreen() && !isMaximized(window) && !isConstrained) {
             existingDescriptor.width = preferred.width;
             existingDescriptor.height = preferred.height;
         }
@@ -3034,7 +3036,7 @@ export const TilingManager = GObject.registerClass({
 
     // get_work_area_for_monitor can overshoot physical bounds in some display setups.
     _clampedWorkArea(workspace, monitor) {
-        const area = workspace.get_work_area_for_monitor(monitor);
+        const area = getMosaicWorkArea(workspace, monitor);
         if (!area) return null;
         const geom = global.display.get_monitor_geometry(monitor);
         const maxW = geom.x + geom.width - area.x;

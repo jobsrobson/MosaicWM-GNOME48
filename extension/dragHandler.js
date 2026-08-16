@@ -13,6 +13,7 @@ import { afterAnimations } from './timing.js';
 import * as WindowState from './windowState.js';
 
 import GObject from 'gi://GObject';
+import { getMosaicWorkArea } from './workArea.js';
 
 export const DragHandler = GObject.registerClass({
     GTypeName: 'MosaicDragHandler',
@@ -254,7 +255,7 @@ export const DragHandler = GObject.registerClass({
     _commitEdgeTileDrop(window) {
         const workspace = window.get_workspace();
         const monitor = global.display.get_current_monitor();
-        const workArea = workspace.get_work_area_for_monitor(monitor);
+        const workArea = getMosaicWorkArea(workspace, monitor);
 
         // Re-verify the mouse is actually in the zone at release time.
         // _currentZone is updated via an idle so it can lag behind the real pointer
@@ -385,7 +386,7 @@ export const DragHandler = GObject.registerClass({
         const [x, y] = global.get_pointer();
         const monitor = global.display.get_current_monitor();
         const workspace = this._draggedWindow.get_workspace();
-        const workArea = workspace.get_work_area_for_monitor(monitor);
+        const workArea = getMosaicWorkArea(workspace, monitor);
 
         const zone = this.edgeTilingManager.detectZone(x, y, workArea, workspace);
         const isInZone = zone !== TileZone.NONE;

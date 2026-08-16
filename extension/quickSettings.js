@@ -10,13 +10,15 @@ import Clutter from 'gi://Clutter';
 import * as QuickSettings from 'resource:///org/gnome/shell/ui/quickSettings.js';
 import * as PopupMenu from 'resource:///org/gnome/shell/ui/popupMenu.js';
 
+import { getShowPanelIndicator, getSettings } from './settings.js';
 import * as Logger from './logger.js';
 
 let _iconPath = null;
+
 function _getIcon(extension, iconName) {
-    if (!_iconPath) {
+    if (!_iconPath)
         _iconPath = extension.path + '/icons';
-    }
+
     const iconFile = Gio.File.new_for_path(`${_iconPath}/${iconName}.svg`);
     return new Gio.FileIcon({ file: iconFile });
 }
@@ -39,15 +41,30 @@ const MosaicMenuToggle = GObject.registerClass(
                 this._onGlobalToggle();
             });
 
-            this.menu.setHeader(_getIcon(extension, 'mosaic-on-symbolic'), 'Mosaic WM');
+            this.menu.setHeader(
+                _getIcon(extension, 'mosaic-on-symbolic'),
+                'Mosaic WM'
+            );
 
             this._workspacesSection = new PopupMenu.PopupMenuSection();
             this.menu.addMenuItem(this._workspacesSection);
 
             this._workspaceManager = global.workspace_manager;
-            this._wsAddedId = this._workspaceManager.connect('workspace-added', () => this._rebuildWorkspaceList());
-            this._wsRemovedId = this._workspaceManager.connect('workspace-removed', () => this._rebuildWorkspaceList());
-            this._wsSwitchedId = this._workspaceManager.connect('active-workspace-changed', () => this._updateCurrentWorkspaceHighlight());
+
+            this._wsAddedId = this._workspaceManager.connect(
+                'workspace-added',
+                () => this._rebuildWorkspaceList()
+            );
+
+            this._wsRemovedId = this._workspaceManager.connect(
+                'workspace-removed',
+                () => this._rebuildWorkspaceList()
+            );
+
+            this._wsSwitchedId = this._workspaceManager.connect(
+                'active-workspace-changed',
+                () => this._updateCurrentWorkspaceHighlight()
+            );
 
             this._rebuildWorkspaceList();
         }
@@ -55,32 +72,50 @@ const MosaicMenuToggle = GObject.registerClass(
         // get_workspace_by_index goes null mid-teardown, so callers never see the hole.
         _eachWorkspace(fn) {
             const nWorkspaces = this._workspaceManager.get_n_workspaces();
+
             for (let i = 0; i < nWorkspaces; i++) {
                 const workspace = this._workspaceManager.get_workspace_by_index(i);
-                if (workspace) fn(workspace, i);
+
+                if (workspace)
+                    fn(workspace, i);
             }
         }
 
         _onGlobalToggle() {
             const enabled = this.checked;
-            Logger.log(`Quick Settings: Global toggle ${enabled ? 'ON' : 'OFF'}`);
 
-            this.gicon = _getIcon(this._extension, enabled ? 'mosaic-on-symbolic' : 'mosaic-off-symbolic');
+            Logger.log(
+                `Quick Settings: Global toggle ${enabled ? 'ON' : 'OFF'}`
+            );
+
+            this.gicon = _getIcon(
+                this._extension,
+                enabled ? 'mosaic-on-symbolic' : 'mosaic-off-symbolic'
+            );
 
             // Carries over to workspaces that don't exist yet. Per-workspace exceptions
             // are dropped since a global click overrides whatever was picked one by one.
             this._extension._mosaicDisabledByDefault = !enabled;
-            this._eachWorkspace(workspace => this._extension._disabledWorkspaceStates.delete(workspace));
+
+            this._eachWorkspace(workspace =>
+                this._extension._disabledWorkspaceStates.delete(workspace)
+            );
 
             if (enabled) {
                 this._eachWorkspace((workspace, i) => {
-                    Logger.log(`Quick Settings: Re-tiling workspace ${i + 1} (global toggle)`);
+                    Logger.log(
+                        `Quick Settings: Re-tiling workspace ${i + 1} (global toggle)`
+                    );
+
                     const nMonitors = global.display.get_n_monitors();
+
                     for (let j = 0; j < nMonitors; j++)
                         this._extension.tilingManager.enforceWorkspaceFit(workspace, j);
                 });
             } else {
-                this._eachWorkspace(workspace => this._extension.disableWorkspaceMosaic(workspace));
+                this._eachWorkspace(workspace =>
+                    this._extension.disableWorkspaceMosaic(workspace)
+                );
             }
 
             this._rebuildWorkspaceList();
@@ -95,8 +130,12 @@ const MosaicMenuToggle = GObject.registerClass(
             const activeIndex = this._workspaceManager.get_active_workspace_index();
 
             for (let i = 0; i < nWorkspaces; i++) {
-                const workspace = this._workspaceManager.get_workspace_by_index(i);
-                const isEnabled = this._extension.isMosaicEnabledForWorkspace(workspace);
+                const workspace =
+                    this._workspaceManager.get_workspace_by_index(i);
+
+                const isEnabled =
+                    this._extension.isMosaicEnabledForWorkspace(workspace);
+
                 const isActive = i === activeIndex;
 
                 const item = new PopupMenu.PopupSwitchMenuItem(
@@ -109,14 +148,18 @@ const MosaicMenuToggle = GObject.registerClass(
                     style_class: 'popup-menu-icon',
                     y_align: Clutter.ActorAlign.CENTER,
                 });
+
                 icon.visible = isActive;
 
                 item.insert_child_at_index(icon, 2);
                 item._locationIcon = icon;
-
                 item._workspaceIndex = i;
+
                 item.connect('toggled', (menuItem, state) => {
-                    this._onWorkspaceToggle(menuItem._workspaceIndex, state);
+                    this._onWorkspaceToggle(
+                        menuItem._workspaceIndex,
+                        state
+                    );
                 });
 
                 this._workspacesSection.addMenuItem(item);
@@ -130,29 +173,44 @@ const MosaicMenuToggle = GObject.registerClass(
         }
 
         _updateCurrentWorkspaceHighlight() {
-            const activeIndex = this._workspaceManager.get_active_workspace_index();
-            const nWorkspaces = this._workspaceManager.get_n_workspaces();
+            const activeIndex =
+                this._workspaceManager.get_active_workspace_index();
 
-            for (let i = 0; i < this._workspaceItems.length && i < nWorkspaces; i++) {
+            const nWorkspaces =
+                this._workspaceManager.get_n_workspaces();
+
+            for (
+                let i = 0;
+                i < this._workspaceItems.length && i < nWorkspaces;
+                i++
+            ) {
                 const item = this._workspaceItems[i];
                 const isActive = i === activeIndex;
 
-                if (item._locationIcon) {
+                if (item._locationIcon)
                     item._locationIcon.visible = isActive;
-                }
             }
 
             this._extension._updateIndicatorIcon();
         }
 
         _onWorkspaceToggle(workspaceIndex, enabled) {
-            Logger.log(`Quick Settings: Workspace ${workspaceIndex + 1} mosaic ${enabled ? 'ON' : 'OFF'}`);
+            Logger.log(
+                `Quick Settings: Workspace ${workspaceIndex + 1} mosaic ${
+                    enabled ? 'ON' : 'OFF'
+                }`
+            );
 
-            const workspace = this._workspaceManager.get_workspace_by_index(workspaceIndex);
+            const workspace =
+                this._workspaceManager.get_workspace_by_index(workspaceIndex);
+
             if (workspace) {
                 // Explicit either way: deleting would drop the workspace back to the
                 // global default, which is the opposite of what the user just picked.
-                this._extension._disabledWorkspaceStates.set(workspace, !enabled);
+                this._extension._disabledWorkspaceStates.set(
+                    workspace,
+                    !enabled
+                );
             }
 
             this._updateGlobalToggleState();
@@ -160,8 +218,12 @@ const MosaicMenuToggle = GObject.registerClass(
 
             if (workspace) {
                 if (enabled) {
-                    Logger.log(`Quick Settings: Re-tiling workspace ${workspaceIndex + 1}`);
+                    Logger.log(
+                        `Quick Settings: Re-tiling workspace ${workspaceIndex + 1}`
+                    );
+
                     const nMonitors = global.display.get_n_monitors();
+
                     for (let j = 0; j < nMonitors; j++)
                         this._extension.tilingManager.enforceWorkspaceFit(workspace, j);
                 } else {
@@ -171,10 +233,17 @@ const MosaicMenuToggle = GObject.registerClass(
         }
 
         _updateGlobalToggleState() {
-            const anyEnabled = this._extension.isMosaicEnabledAnywhere();
+            const anyEnabled =
+                this._extension.isMosaicEnabledAnywhere();
 
             this.checked = anyEnabled;
-            this.gicon = _getIcon(this._extension, anyEnabled ? 'mosaic-on-symbolic' : 'mosaic-off-symbolic');
+
+            this.gicon = _getIcon(
+                this._extension,
+                anyEnabled
+                    ? 'mosaic-on-symbolic'
+                    : 'mosaic-off-symbolic'
+            );
         }
 
         destroy() {
@@ -182,10 +251,12 @@ const MosaicMenuToggle = GObject.registerClass(
                 this._workspaceManager.disconnect(this._wsAddedId);
                 this._wsAddedId = null;
             }
+
             if (this._wsRemovedId) {
                 this._workspaceManager.disconnect(this._wsRemovedId);
                 this._wsRemovedId = null;
             }
+
             if (this._wsSwitchedId) {
                 this._workspaceManager.disconnect(this._wsSwitchedId);
                 this._wsSwitchedId = null;
@@ -193,7 +264,8 @@ const MosaicMenuToggle = GObject.registerClass(
 
             super.destroy();
         }
-    });
+    }
+);
 
 export const MosaicIndicator = GObject.registerClass(
     class MosaicIndicator extends QuickSettings.SystemIndicator {
@@ -203,30 +275,62 @@ export const MosaicIndicator = GObject.registerClass(
             this._extension = extension;
 
             this._indicator = this._addIndicator();
-            this._indicator.gicon = _getIcon(extension, 'mosaic-on-symbolic');
+            this._indicator.gicon = _getIcon(
+                extension,
+                'mosaic-on-symbolic'
+            );
 
             this._toggle = new MosaicMenuToggle(extension);
             this.quickSettingsItems.push(this._toggle);
 
             this._workspaceManager = global.workspace_manager;
-            this._wsSwitchedId = this._workspaceManager.connect('active-workspace-changed', () => {
-                this._updateIcon();
-            });
+
+            this._wsSwitchedId = this._workspaceManager.connect(
+                'active-workspace-changed',
+                () => {
+                    this._updateIcon();
+                }
+            );
+
+            // Watch the preference so the panel indicator can be shown/hidden
+            // immediately without restarting GNOME Shell.
+            this._settings = getSettings();
+
+            this._indicatorSettingId = this._settings?.connect(
+                'changed::show-panel-indicator',
+                () => {
+                    this._updateIcon();
+                }
+            ) ?? null;
 
             this._updateIcon();
         }
 
         _updateIcon() {
-            // The off variant means "not on this workspace", so it only makes sense while
-            // mosaic still lives somewhere; off everywhere, the icon leaves the bar.
-            this._indicator.visible = this._extension.isMosaicEnabledAnywhere();
+            // The Quick Settings toggle always remains available. This setting controls
+            // only the separate status indicator shown in the top panel.
+            this._indicator.visible =
+                getShowPanelIndicator() &&
+                this._extension.isMosaicEnabledAnywhere();
+
             if (!this._indicator.visible)
                 return;
 
-            const activeIndex = this._workspaceManager.get_active_workspace_index();
-            const workspace = this._workspaceManager.get_workspace_by_index(activeIndex);
-            const isEnabled = this._extension.isMosaicEnabledForWorkspace(workspace);
-            this._indicator.gicon = _getIcon(this._extension, isEnabled ? 'mosaic-on-symbolic' : 'mosaic-off-symbolic');
+            const activeIndex =
+                this._workspaceManager.get_active_workspace_index();
+
+            const workspace =
+                this._workspaceManager.get_workspace_by_index(activeIndex);
+
+            const isEnabled =
+                this._extension.isMosaicEnabledForWorkspace(workspace);
+
+            this._indicator.gicon = _getIcon(
+                this._extension,
+                isEnabled
+                    ? 'mosaic-on-symbolic'
+                    : 'mosaic-off-symbolic'
+            );
         }
 
         destroy() {
@@ -235,7 +339,16 @@ export const MosaicIndicator = GObject.registerClass(
                 this._wsSwitchedId = null;
             }
 
+            if (this._indicatorSettingId) {
+                this._settings?.disconnect(this._indicatorSettingId);
+                this._indicatorSettingId = null;
+            }
+
+            this._settings = null;
+
             this.quickSettingsItems.forEach(item => item.destroy());
+
             super.destroy();
         }
-    });
+    }
+);

@@ -16,6 +16,7 @@ import { IS_MINIATURE } from './windowState.js';
 import { ComputedLayouts } from './mosaicModel.js';
 import { isWindowAlive } from './liveness.js';
 import { afterWorkspaceSwitch, afterAnimations, afterWindowClose, monotonicNow } from './timing.js';
+import { getMosaicWorkArea } from './workArea.js';
 
 export const WindowHandler = GObject.registerClass({
     GTypeName: 'MosaicWindowHandler',
@@ -241,7 +242,7 @@ export const WindowHandler = GObject.registerClass({
     _isFrameMonitorSized(win) {
         const ws = win.get_workspace();
         const mon = win.get_monitor();
-        const wa = ws && mon !== null ? ws.get_work_area_for_monitor(mon) : null;
+        const wa = ws && mon !== null ? getMosaicWorkArea(ws, mon) : null;
         const frame = win.get_frame_rect();
         return !!wa && frame.width >= wa.width && frame.height >= wa.height;
     }
@@ -279,7 +280,7 @@ export const WindowHandler = GObject.registerClass({
         // Smart Resize decision is never clobbered.
         if (!WindowState.get(win, 'preferredSize')) {
             const settled = win.get_frame_rect();
-            const wa = ws && mon !== null ? ws.get_work_area_for_monitor(mon) : null;
+            const wa = ws && mon !== null ? getMosaicWorkArea(ws, mon) : null;
             // A client that stays monitor-sized through the exit leaves a frame
             // indistinguishable from maximized. Use 95% of the work area instead so it
             // reads as "nearly full" rather than maximized.
@@ -942,7 +943,7 @@ export const WindowHandler = GObject.registerClass({
     }
 
     _dndRestoreSolo(win, workspace, monitor, preferredSize) {
-        const wa = workspace.get_work_area_for_monitor(monitor);
+        const wa = getMosaicWorkArea(workspace, monitor);
         const currentRect = win.get_frame_rect();
         const targetW = Math.min(preferredSize.width, wa.width - constants.WINDOW_SPACING * 2);
         const targetH = Math.min(preferredSize.height, wa.height - constants.WINDOW_SPACING * 2);
@@ -952,7 +953,7 @@ export const WindowHandler = GObject.registerClass({
 
     _dndRestoreExpansion(monitorWindows, workspace, monitor) {
         const usedWidth = monitorWindows.reduce((sum, w) => sum + w.get_frame_rect().width, 0);
-        const wa = workspace.get_work_area_for_monitor(monitor);
+        const wa = getMosaicWorkArea(workspace, monitor);
         const availableExtra = wa.width - usedWidth - (monitorWindows.length + 1) * constants.WINDOW_SPACING;
         if (availableExtra <= constants.ANIMATION_DIFF_THRESHOLD) return;
 
@@ -1195,7 +1196,7 @@ export const WindowHandler = GObject.registerClass({
             } else {
                 // Fallback for natively fullscreen apps with no saved_rect:
                 // Use 80% of work area as a reasonable default window size
-                const workArea = workspace.get_work_area_for_monitor(monitor);
+                const workArea = getMosaicWorkArea(workspace, monitor);
                 if (workArea) {
                     const fallbackWidth = Math.floor(workArea.width * 0.8);
                     const fallbackHeight = Math.floor(workArea.height * 0.8);
@@ -1491,7 +1492,7 @@ export const WindowHandler = GObject.registerClass({
                 return GLib.SOURCE_REMOVE;
             }
 
-            const wa = WORKSPACE.get_work_area_for_monitor(MONITOR);
+            const wa = getMosaicWorkArea(WORKSPACE, MONITOR);
             Logger.log(`Window ${WINDOW.get_id()} ready: size=${rect.width}x${rect.height}, workArea=${wa.width}x${wa.height}`);
 
             if (WindowState.get(WINDOW, 'movedByOverflow')) {

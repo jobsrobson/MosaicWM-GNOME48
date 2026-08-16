@@ -8,6 +8,7 @@ import * as WindowState from './windowState.js';
 import { monotonicNow } from './timing.js';
 
 import GObject from 'gi://GObject';
+import { getMosaicWorkArea } from './workArea.js';
 
 // Which axis each direction travels on, and which way "closer" runs on it.
 const DIRECTION_RULES = Object.freeze({
@@ -154,7 +155,7 @@ export const SwappingManager = GObject.registerClass({
         const mosaicWindows = this._edgeTilingManager.getNonEdgeTiledWindows(workspace, monitor);
         if (mosaicWindows.length === 0) return null;
 
-        const workArea = workspace.get_work_area_for_monitor(monitor);
+        const workArea = getMosaicWorkArea(workspace, monitor);
         const centerX = workArea.x + workArea.width / 2;
 
         const sideWindows = mosaicWindows.filter(w => {
@@ -186,7 +187,7 @@ export const SwappingManager = GObject.registerClass({
     }
 
     _findEdgeTileAcrossCenter(window, direction, workspace, monitor) {
-        const workArea = workspace.get_work_area_for_monitor(monitor);
+        const workArea = getMosaicWorkArea(workspace, monitor);
         const centerX = workArea.x + workArea.width / 2;
         const windowCenterX = centerOf(window.get_frame_rect()).x;
 
@@ -365,7 +366,7 @@ export const SwappingManager = GObject.registerClass({
 
         this._edgeTilingManager.removeTile(tiledWindow);
 
-        const workArea = workspace.get_work_area_for_monitor(monitor);
+        const workArea = getMosaicWorkArea(workspace, monitor);
         this._edgeTilingManager.applyTile(mosaicWindow, tiledZone, workArea, true);
 
         WindowState.set(mosaicWindow, 'lastSwapTime', monotonicNow());
@@ -382,7 +383,7 @@ export const SwappingManager = GObject.registerClass({
 
         Logger.log(`Swapping tiled windows: ${window1.get_id()} ↔ ${window2.get_id()}`);
 
-        const workArea = workspace.get_work_area_for_monitor(monitor);
+        const workArea = getMosaicWorkArea(workspace, monitor);
         this._edgeTilingManager.applyTile(window1, zone2, workArea);
         this._edgeTilingManager.applyTile(window2, zone1, workArea);
 
@@ -396,7 +397,7 @@ export const SwappingManager = GObject.registerClass({
         if (!this._edgeTilingManager) return false;
 
         Logger.log(`Tiling window ${window.get_id()} to empty zone ${zone}`);
-        const workArea = workspace.get_work_area_for_monitor(monitor);
+        const workArea = getMosaicWorkArea(workspace, monitor);
         this._edgeTilingManager.applyTile(window, zone, workArea);
         WindowState.set(window, 'lastSwapTime', monotonicNow());
         return true;
@@ -406,7 +407,7 @@ export const SwappingManager = GObject.registerClass({
         if (!this._edgeTilingManager) return false;
 
         Logger.log(`Expanding quarter tile ${window.get_id()} to ${targetZone}`);
-        const workArea = workspace.get_work_area_for_monitor(monitor);
+        const workArea = getMosaicWorkArea(workspace, monitor);
         this._edgeTilingManager.applyTile(window, targetZone, workArea);
         WindowState.set(window, 'lastSwapTime', monotonicNow());
         return true;

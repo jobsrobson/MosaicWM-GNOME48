@@ -14,6 +14,7 @@ import { isWorkspaceAlive, isWindowAlive } from './liveness.js';
 import { MosaicModel } from './mosaicModel.js';
 
 import GObject from 'gi://GObject';
+import { getMosaicWorkArea } from './workArea.js';
 
 export const ResizeHandler = GObject.registerClass({
     GTypeName: 'MosaicResizeHandler',
@@ -488,7 +489,7 @@ export const ResizeHandler = GObject.registerClass({
         const sizeWorkspace = window.get_workspace();
         const sizeMonitor = window.get_monitor();
         const sizeWorkArea = sizeWorkspace && sizeMonitor !== null && sizeMonitor !== undefined
-            ? sizeWorkspace.get_work_area_for_monitor(sizeMonitor) : null;
+            ? getMosaicWorkArea(sizeWorkspace, sizeMonitor) : null;
         return sizeWorkArea && rect.width >= sizeWorkArea.width && rect.height >= sizeWorkArea.height;
     }
 
